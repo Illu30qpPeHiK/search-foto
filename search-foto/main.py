@@ -90,32 +90,52 @@ class ImageDownloader:
 def main():
     username = os.getenv('username')
     password = os.getenv('password')
+    
+    bot = SearchBot(username, password)
 
     if not username or not password:
-        logging.error("Username or password environment variables are not set.")
-        return
+        try:
+            username_to_search = input('Enter the username that needs to be found: ')
+            bot.search_user(username_to_search)
 
-    try:
-        bot = SearchBot(username, password)
-        bot.login()
+            image_urls = bot.scroll_and_collect_images()
 
-        username_to_search = input('Введіть username котрий треба знайти: ')
+            bot.close()
 
-        bot.search_user(username_to_search)
-
-        image_urls = bot.scroll_and_collect_images()
-
-        bot.close()
-
-        if image_urls:
-            downloader = ImageDownloader(folder=username_to_search)
-            downloader.download_images(image_urls)
-        else:
-            logging.info("No images found for the given username.")
+            if image_urls:
+                downloader = ImageDownloader(folder=username_to_search)
+                downloader.download_images(image_urls)
+            else:
+                logging.info("No images found for the given username.")
         
-        time.sleep(random.uniform(2, 5))
-    except Exception as e:
-        logging.error(f"An error occurred: {e}")
+            time.sleep(random.uniform(2, 5))
+
+        except Exception as e:
+            logging.error(f"Please set the username and password as environment variables: {e}")
+
+    else:
+        try:
+            bot.login()
+
+            username_to_search = input('Enter the username that needs to be found: ')
+
+            bot.search_user(username_to_search)
+
+            image_urls = bot.scroll_and_collect_images()
+
+            bot.close()
+
+            if image_urls:
+                downloader = ImageDownloader(folder=username_to_search)
+                downloader.download_images(image_urls)
+            else:
+                logging.info("No images found for the given username.")
+        
+            time.sleep(random.uniform(2, 5))
+            
+        except Exception as e:
+            logging.error(f"Error: {e}")
+    
 
 if __name__ == "__main__":
     main()
