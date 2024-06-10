@@ -10,92 +10,112 @@ from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
 import logging
 
-
 logging.basicConfig(level=logging.INFO)
 
-username = os.getenv('INSTAGRAM_USERNAME')
-password = os.getenv('INSTAGRAM_PASSWORD')
+class SearchBot:
+    def __init__(self, username, password):
+        self.username = username
+        self.password = password
+
+        options = webdriver.SafariOptions()
+        self.driver = webdriver.Safari(options=options)
+
+    def login(self):
+        try:
+            self.driver.get('https://www.instagram.com/')
+            username_input = WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located((By.NAME, 'username'))
+            )
+            username_input.clear()
+            username_input.send_keys(self.username)
+            time.sleep(random.uniform(2, 3))
+
+            password_input = WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located((By.NAME, 'password'))
+            )
+            password_input.clear()
+            password_input.send_keys(self.password)
+            password_input.send_keys(self.password)
+            password_input.send_keys(Keys.ENTER)
+            time.sleep(random.uniform(2, 3))
+        except Exception as e:
+            logging.error(f"Error logging in: {e}")
+
+    def search_user(self, username):
+        self.driver.get(f'https://www.instagram.com/{username}/')
+
+    def scroll_and_collect_images(self):
+        image_urls = set()
+        last_height = self.driver.execute_script("return document.body.scrollHeight")
+        while True:
+            page_source = self.driver.page_source
+            soup = BeautifulSoup(page_source, 'html.parser')
+            images = soup.find_all('img')
+            for img in images:
+                img_url = img.get('src')
+                if img_url and img_url not in image_urls:
+                    image_urls.add(img_url)
+            
+            self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            time.sleep(random.uniform(2, 5))
+            new_height = self.driver.execute_script("return document.body.scrollHeight")
+            if new_height == last_height:
+                break
+            last_height = new_height
+        
+        return list(image_urls)
+
+    def close(self):
+        self.driver.quit()
 
 
-options = webdriver.SafariOptions()
+class ImageDownloader:
+    def __init__(self, folder):
+        self.folder = folder
+        if not os.path.exists(folder):
+            os.makedirs(folder)
 
-driver = webdriver.Safari(options=options)
+    def download_images(self, image_urls):
+        for index, img_url in enumerate(image_urls):
+            if img_url:
+                try:
+                    img_data = requests.get(img_url).content
+                    with open(f"{self.folder}/image_{index + 1}.jpg", 'wb') as handler:
+                        handler.write(img_data)
+                    logging.info(f"Image {index + 1} downloaded: {img_url} \n")
+                except Exception as e:
+                    logging.error(f"Could not download image {img_url}: {e} \n")
 
-def search_user():
-    return input('Введіть username котрий треба знайти: ')
-
-def login(username, password):
-    try:
-        username_input = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.NAME, 'username'))
-        )
-        username_input.clear()
-        username_input.send_keys(username)
-        time.sleep(random.uniform(2, 5))
-
-        password_input = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.NAME, 'password'))
-        )
-        password_input.clear() 
-        password_input.send_keys(password)
-        password_input.send_keys(Keys.ENTER)
-        time.sleep(random.uniform(2, 5))
-    except Exception as e:
-        print(f"Error logging in: {e}")
-
-def search(username):
-    driver.get(f'https://www.instagram.com/{username}/')
-
-def get_page_source():
-    time.sleep(random.uniform(2, 5)) 
-    return driver.page_source
-
-def get_all_fotos(page_source):
-    try:
-        soup = BeautifulSoup(page_source, 'html.parser')
-        find_all_foto = soup.find_all('img')
-        return find_all_foto
-    except Exception as e:
-        logging.error(f"Error getting all fotos: {e}")
-        print('\n')
-        return None
-
-def download_images(fotos, folder):
-    if not os.path.exists(folder):
-        os.makedirs(folder)
-
-    for index, foto in enumerate(fotos):
-        img_url = foto.get('src')
-        if img_url:
-            try:
-                img_data = requests.get(img_url).content
-                with open(f"{folder}/image_{index + 1}.jpg", 'wb') as handler:
-                    handler.write(img_data)
-                logging.info(f"Image {index + 1} downloaded: {img_url}")
-                print('\n')
-            except Exception as e:
-                logging.error(f"Could not download image {img_url}: {e}")
 
 def main():
+    username = os.getenv('username')
+    password = os.getenv('password')
+
+    if not username or not password:
+        logging.error("Username or password environment variables are not set.")
+        return
+
     try:
-        driver.get('https://www.instagram.com/')
-        username_to_search = search_user()
-        time.sleep(random.uniform(2, 5))
+        bot = SearchBot(username, password)
+        bot.login()
 
-        login(username, password)
-        time.sleep(random.uniform(2, 5))
+        username_to_search = input('Введіть username котрий треба знайти: ')
 
-        search(username_to_search)
-        page_source = get_page_source()
-        fotos = get_all_fotos(page_source)
-        
-        if fotos:
-            download_images(fotos, folder=username_to_search)
+        bot.search_user(username_to_search)
+
+        image_urls = bot.scroll_and_collect_images()
+
+        bot.close()
+
+        if image_urls:
+            downloader = ImageDownloader(folder=username_to_search)
+            downloader.download_images(image_urls)
+        else:
+            logging.info("No images found for the given username.")
         
         time.sleep(random.uniform(2, 5))
-    finally:
-        driver.close()
-        driver.quit()
+    except Exception as e:
+        logging.error(f"An error occurred: {e}")
 
 if __name__ == "__main__":
     main()
