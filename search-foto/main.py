@@ -90,39 +90,18 @@ class ImageDownloader:
 def main():
     username = os.getenv('username')
     password = os.getenv('password')
-    
-    bot = SearchBot(username, password)
 
-    if not username or not password:
-        try:
-            username_to_search = input('Enter the username that needs to be found: ')
-            bot.search_user(username_to_search)
+    try:
+        choice = input("Do you want to login? (y/n): ")
 
-            image_urls = bot.scroll_and_collect_images()
-
-            bot.close()
-
-            if image_urls:
-                downloader = ImageDownloader(folder=username_to_search)
-                downloader.download_images(image_urls)
-            else:
-                logging.info("No images found for the given username.")
-        
-            time.sleep(random.uniform(2, 5))
-
-        except Exception as e:
-            logging.error(f"Please set the username and password as environment variables: {e}")
-
-    else:
-        try:
+        if choice.lower() == 'y':
+            bot = SearchBot(username, password)
             bot.login()
 
             username_to_search = input('Enter the username that needs to be found: ')
-
             bot.search_user(username_to_search)
 
             image_urls = bot.scroll_and_collect_images()
-
             bot.close()
 
             if image_urls:
@@ -132,9 +111,29 @@ def main():
                 logging.info("No images found for the given username.")
         
             time.sleep(random.uniform(2, 5))
+
+        elif choice.lower() == 'n':
+            bot = SearchBot(username, password)
+
+            username_to_search = input('Enter the username that needs to be found: ')
+            bot.search_user(username_to_search)
+
+            image_urls = bot.scroll_and_collect_images()
+            bot.close()
+
+            if image_urls:
+                downloader = ImageDownloader(folder=username_to_search)
+                downloader.download_images(image_urls)
+            else:
+                logging.info("No images found for the given username.")
+
+            time.sleep(random.uniform(2, 5))
+
+        else:
+            logging.error("Invalid choice. Please enter 'y' or 'n', or please set the username and password in .env file.")
             
-        except Exception as e:
-            logging.error(f"Error: {e}")
+    except Exception as e:
+        logging.error(f"Error: {e}")
     
 
 if __name__ == "__main__":
