@@ -92,7 +92,8 @@ def main():
     password = os.getenv('password')
     
     bot = SearchBot(username, password)
-
+    downloader = ImageDownloader(folder=username_to_search)
+    
     if not username or not password:
         try:
             username_to_search = input('Enter the username that needs to be found: ')
@@ -103,7 +104,6 @@ def main():
             bot.close()
 
             if image_urls:
-                downloader = ImageDownloader(folder=username_to_search)
                 downloader.download_images(image_urls)
             else:
                 logging.info("No images found for the given username.")
@@ -126,7 +126,6 @@ def main():
             bot.close()
 
             if image_urls:
-                downloader = ImageDownloader(folder=username_to_search)
                 downloader.download_images(image_urls)
             else:
                 logging.info("No images found for the given username.")
