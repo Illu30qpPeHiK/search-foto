@@ -1,3 +1,4 @@
+import os
 import time
 import random
 import logging
@@ -7,8 +8,6 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
-
-logging.basicConfig(level=logging.INFO)
 
 class SearchData:
     def __init__(self, username, password):
@@ -22,18 +21,23 @@ class SearchData:
             try:
                 self.driver.get(site_url)
                 username_input = WebDriverWait(self.driver, 10).until(
-                    EC.presence_of_element_located((By.NAME, 'username'))
+                    lambda driver: EC.presence_of_element_located((By.NAME, 'username'))(driver)
+                    or EC.presence_of_element_located((By.NAME, 'email'))(driver)
+                    or EC.presence_of_element_located((By.ID, 'email'))(driver)
                 )
                 username_input.clear()
                 username_input.send_keys(self.username)
                 time.sleep(random.uniform(2, 3))
 
                 password_input = WebDriverWait(self.driver, 10).until(
-                    EC.presence_of_element_located((By.NAME, 'password'))
+                    lambda driver: EC.presence_of_element_located((By.NAME, 'password'))(driver)
+                    or EC.presence_of_element_located((By.NAME, 'pass'))(driver)
                 )
+
                 password_input.clear()
                 password_input.send_keys(self.password)
                 password_input.send_keys(self.password)
+                time.sleep(random.uniform(1, 2))
                 password_input.send_keys(Keys.ENTER)
                 time.sleep(random.uniform(2, 3))
             except Exception as e:

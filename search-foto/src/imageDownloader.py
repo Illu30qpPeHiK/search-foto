@@ -2,6 +2,8 @@ import os
 import requests
 import logging
 
+logging.basicConfig(level=logging.INFO)
+
 class ImageDownloader:
     def __init__(self, folder):
         self.folder = folder
