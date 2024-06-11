@@ -19,20 +19,20 @@ class SearchMultiSites:
         bot = SearchData(self.username, self.password)
 
         for site_url in self.sites:
-            logging.info(f"Пошук на {site_url}")
+            logging.info(f"Search on{site_url}")
             if self.login_required:
                 bot.login(site_url)
                 bot.search_user(self.username_to_search, site_url)
                 image_urls = bot.scroll_and_collect_images()
                 if not image_urls:
-                    logging.warning("На першій спробі зображення не знайдені. Повторна спроба...")
+                    logging.warning("No images found on first attempt. Retry...")
                     bot.search_user(self.username_to_search, site_url)
                     image_urls = bot.scroll_and_collect_images()
             else:
                 bot.search_user(self.username_to_search, site_url)
                 image_urls = bot.scroll_and_collect_images()
                 if not image_urls:
-                    logging.warning("На першій спробі зображення не знайдені. Повторна спроба...")
+                    logging.warning("No images found on first attempt. Retry...")
                     bot.search_user(self.username_to_search, site_url)
                     image_urls = bot.scroll_and_collect_images()
 
@@ -41,7 +41,7 @@ class SearchMultiSites:
                 downloader = ImageDownloader(folder=self.username_to_search)
                 downloader.download_images(site_name, image_urls)
             else:
-                logging.warning(f"Не знайдено зображень для {self.username_to_search} на {site_url}")
+                logging.warning(f"No images found for {self.username_to_search} on {site_url}")
 
             time.sleep(random.uniform(2, 5))
         bot.close()
