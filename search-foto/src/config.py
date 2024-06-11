@@ -1,2 +1,2 @@
-username = 'Searchfotobot_'
-password = 'Fg12124ht'
+username = 'your_login'
+password = 'your_password'
